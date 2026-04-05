@@ -253,6 +253,10 @@ export async function buildPreview(
       }
       if (gc?.infiniteGold) gameOptions.push("Infinite Gold");
       if (gc?.infiniteTroops) gameOptions.push("Infinite Troops");
+      if (gc?.startingTroops)
+        gameOptions.push(
+          `Starting Troops: ${gc.startingTroops / 1_000_000}M`,
+        );
       if (gc?.instantBuild) gameOptions.push("Instant Build");
       if (gc?.randomSpawn) gameOptions.push("Random Spawn");
       if (gc?.nations === "disabled") gameOptions.push("Nations Disabled");

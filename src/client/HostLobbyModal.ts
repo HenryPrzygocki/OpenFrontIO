@@ -71,6 +71,8 @@ export class HostLobbyModal extends BaseModal {
   @state() private goldMultiplierValue: number | undefined = undefined;
   @state() private startingGold: boolean = false;
   @state() private startingGoldValue: number | undefined = undefined;
+  @state() private startingTroops: boolean = false;
+  @state() private startingTroopsValue: number | undefined = undefined;
   @state() private disableAlliances: boolean = false;
   @state() private lobbyId = "";
   @state() private lobbyUrlSuffix = "";
@@ -209,6 +211,24 @@ export class HostLobbyModal extends BaseModal {
         .onToggle=${this.handleStartingGoldToggle}
         .onChange=${this.handleStartingGoldValueChanges}
         .onKeyDown=${this.handleStartingGoldValueKeyDown}
+      ></toggle-input-card>`,
+      html`<toggle-input-card
+        .labelKey=${"host_modal.starting_troops"}
+        .checked=${this.startingTroops}
+        .inputId=${"starting-troops-value"}
+        .inputMin=${0.1}
+        .inputMax=${1000}
+        .inputStep=${"any"}
+        .inputValue=${this.startingTroopsValue}
+        .inputAriaLabel=${translateText("host_modal.starting_troops")}
+        .inputPlaceholder=${translateText(
+          "host_modal.starting_troops_placeholder",
+        )}
+        .defaultInputValue=${1}
+        .minValidOnEnable=${0.1}
+        .onToggle=${this.handleStartingTroopsToggle}
+        .onChange=${this.handleStartingTroopsValueChanges}
+        .onKeyDown=${this.handleStartingTroopsValueKeyDown}
       ></toggle-input-card>`,
     ];
 
@@ -462,6 +482,8 @@ export class HostLobbyModal extends BaseModal {
     this.goldMultiplierValue = undefined;
     this.startingGold = false;
     this.startingGoldValue = undefined;
+    this.startingTroops = false;
+    this.startingTroopsValue = undefined;
     this.disableAlliances = false;
 
     this.leaveLobbyOnClose = true;
@@ -674,6 +696,32 @@ export class HostLobbyModal extends BaseModal {
     this.putGameConfig();
   };
 
+  private handleStartingTroopsToggle = (
+    checked: boolean,
+    value: number | string | undefined,
+  ) => {
+    this.startingTroops = checked;
+    this.startingTroopsValue = toOptionalNumber(value);
+    this.putGameConfig();
+  };
+
+  private handleStartingTroopsValueKeyDown = (e: KeyboardEvent) => {
+    preventDisallowedKeys(e, ["-", "+", "e", "E"]);
+  };
+
+  private handleStartingTroopsValueChanges = (e: Event) => {
+    const input = e.target as HTMLInputElement;
+    const value = parseBoundedFloatFromInput(input, { min: 0.1, max: 1000 });
+
+    if (value === undefined) {
+      this.startingTroopsValue = undefined;
+      input.value = "";
+    } else {
+      this.startingTroopsValue = value;
+    }
+    this.putGameConfig();
+  };
+
   private handleRandomSpawnChange = (val: boolean) => {
     this.randomSpawn = val;
     this.putGameConfig();
@@ -804,6 +852,11 @@ export class HostLobbyModal extends BaseModal {
             startingGold:
               this.startingGold === true && this.startingGoldValue !== undefined
                 ? Math.round(this.startingGoldValue * 1_000_000)
+                : undefined,
+            startingTroops:
+              this.startingTroops === true &&
+              this.startingTroopsValue !== undefined
+                ? Math.round(this.startingTroopsValue * 1_000_000)
                 : undefined,
             disableAlliances: this.disableAlliances || undefined,
           } satisfies Partial<GameConfig>,

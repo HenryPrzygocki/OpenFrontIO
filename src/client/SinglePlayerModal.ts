@@ -56,6 +56,8 @@ const DEFAULT_OPTIONS = {
   goldMultiplierValue: undefined as number | undefined,
   startingGold: false,
   startingGoldValue: undefined as number | undefined,
+  startingTroops: false,
+  startingTroopsValue: undefined as number | undefined,
   disabledUnits: [] as UnitType[],
   disableAlliances: false,
 } as const;
@@ -88,6 +90,9 @@ export class SinglePlayerModal extends BaseModal {
   @state() private startingGold: boolean = DEFAULT_OPTIONS.startingGold;
   @state() private startingGoldValue: number | undefined =
     DEFAULT_OPTIONS.startingGoldValue;
+  @state() private startingTroops: boolean = DEFAULT_OPTIONS.startingTroops;
+  @state() private startingTroopsValue: number | undefined =
+    DEFAULT_OPTIONS.startingTroopsValue;
 
   @state() private disabledUnits: UnitType[] = [
     ...DEFAULT_OPTIONS.disabledUnits,
@@ -219,6 +224,24 @@ export class SinglePlayerModal extends BaseModal {
         .onToggle=${this.handleStartingGoldToggle}
         .onChange=${this.handleStartingGoldValueChanges}
         .onKeyDown=${this.handleStartingGoldValueKeyDown}
+      ></toggle-input-card>`,
+      html`<toggle-input-card
+        .labelKey=${"single_modal.starting_troops"}
+        .checked=${this.startingTroops}
+        .inputId=${"starting-troops-value"}
+        .inputMin=${0.1}
+        .inputMax=${1000}
+        .inputStep=${"any"}
+        .inputValue=${this.startingTroopsValue}
+        .inputAriaLabel=${translateText("single_modal.starting_troops")}
+        .inputPlaceholder=${translateText(
+          "single_modal.starting_troops_placeholder",
+        )}
+        .defaultInputValue=${1}
+        .minValidOnEnable=${0.1}
+        .onToggle=${this.handleStartingTroopsToggle}
+        .onChange=${this.handleStartingTroopsValueChanges}
+        .onKeyDown=${this.handleStartingTroopsValueKeyDown}
       ></toggle-input-card>`,
     ];
 
@@ -383,6 +406,7 @@ export class SinglePlayerModal extends BaseModal {
       this.gameMode !== DEFAULT_OPTIONS.gameMode ||
       this.goldMultiplier !== DEFAULT_OPTIONS.goldMultiplier ||
       this.startingGold !== DEFAULT_OPTIONS.startingGold ||
+      this.startingTroops !== DEFAULT_OPTIONS.startingTroops ||
       this.disableAlliances !== DEFAULT_OPTIONS.disableAlliances ||
       this.disabledUnits.length > 0
     );
@@ -410,6 +434,8 @@ export class SinglePlayerModal extends BaseModal {
     this.goldMultiplierValue = DEFAULT_OPTIONS.goldMultiplierValue;
     this.startingGold = DEFAULT_OPTIONS.startingGold;
     this.startingGoldValue = DEFAULT_OPTIONS.startingGoldValue;
+    this.startingTroops = DEFAULT_OPTIONS.startingTroops;
+    this.startingTroopsValue = DEFAULT_OPTIONS.startingTroopsValue;
     this.disableAlliances = DEFAULT_OPTIONS.disableAlliances;
   }
 
@@ -609,6 +635,33 @@ export class SinglePlayerModal extends BaseModal {
     }
   };
 
+  private handleStartingTroopsToggle = (
+    checked: boolean,
+    value: number | string | undefined,
+  ) => {
+    this.startingTroops = checked;
+    this.startingTroopsValue = toOptionalNumber(value);
+  };
+
+  private handleStartingTroopsValueKeyDown = (e: KeyboardEvent) => {
+    preventDisallowedKeys(e, ["-", "+", "e", "E"]);
+  };
+
+  private handleStartingTroopsValueChanges = (e: Event) => {
+    const input = e.target as HTMLInputElement;
+    const value = parseBoundedFloatFromInput(input, {
+      min: 0.1,
+      max: 1000,
+    });
+
+    if (value === undefined) {
+      this.startingTroopsValue = undefined;
+      input.value = "";
+    } else {
+      this.startingTroopsValue = value;
+    }
+  };
+
   private handleGameModeSelection(value: GameMode) {
     this.gameMode = value;
   }
@@ -696,6 +749,13 @@ export class SinglePlayerModal extends BaseModal {
                 ? {
                     startingGold: Math.round(
                       this.startingGoldValue * 1_000_000,
+                    ),
+                  }
+                : {}),
+              ...(this.startingTroops && this.startingTroopsValue !== undefined
+                ? {
+                    startingTroops: Math.round(
+                      this.startingTroopsValue * 1_000_000,
                     ),
                   }
                 : {}),

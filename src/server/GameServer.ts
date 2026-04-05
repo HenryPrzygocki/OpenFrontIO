@@ -167,6 +167,9 @@ export class GameServer {
     if (gameConfig.startingGold !== undefined) {
       this.gameConfig.startingGold = gameConfig.startingGold;
     }
+    if (gameConfig.startingTroops !== undefined) {
+      this.gameConfig.startingTroops = gameConfig.startingTroops;
+    }
     if (gameConfig.disableAlliances !== undefined) {
       this.gameConfig.disableAlliances = gameConfig.disableAlliances;
     }
