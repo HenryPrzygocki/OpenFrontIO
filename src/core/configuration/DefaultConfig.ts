@@ -265,7 +265,7 @@ export class DefaultConfig implements Config {
     return this._gameConfig.goldMultiplier ?? 1;
   }
   startingGold(playerInfo: PlayerInfo): Gold {
-    if (playerInfo.playerType === PlayerType.Bot) {
+    if (playerInfo.playerType !== PlayerType.Human) {
       return 0n;
     }
     return BigInt(this._gameConfig.startingGold ?? 0);
