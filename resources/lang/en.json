@@ -210,7 +210,9 @@
     "gold_multiplier": "Gold multiplier",
     "gold_multiplier_placeholder": "2.0x",
     "starting_gold": "Starting Gold (Millions)",
-    "starting_gold_placeholder": "5"
+    "starting_gold_placeholder": "5",
+    "starting_troops": "Starting Max Troops (Millions)",
+    "starting_troops_placeholder": "100"
   },
   "token_login_modal": {
     "title": "Logging in...",
@@ -457,6 +459,8 @@
     "gold_multiplier_placeholder": "2.0x",
     "starting_gold": "Starting Gold (Millions)",
     "starting_gold_placeholder": "5",
+    "starting_troops": "Starting Max Troops (Millions)",
+    "starting_troops_placeholder": "100",
     "leave_confirmation": "Are you sure you want to leave the lobby?"
   },
   "team_colors": {

@@ -782,7 +782,8 @@ export class DefaultConfig implements Config {
     }
 
     if (player.type() === PlayerType.Human) {
-      return maxTroops;
+      const startingMax = (this._gameConfig.startingTroops ?? 0) * 10;
+      return startingMax > 0 ? Math.max(maxTroops, startingMax) : maxTroops;
     }
 
     switch (this._gameConfig.difficulty) {
@@ -802,8 +803,6 @@ export class DefaultConfig implements Config {
   troopIncreaseRate(player: Player): number {
     const max = this.maxTroops(player);
 
-    // When above cap (possible with startingTroops), hold troops stable.
-    // Surplus is redirected to gold income in goldAdditionRate.
     if (player.troops() >= max) {
       return 0;
     }
@@ -847,23 +846,7 @@ export class DefaultConfig implements Config {
     } else {
       baseRate = 100n;
     }
-    let rate = BigInt(Math.floor(Number(baseRate) * multiplier));
-
-    // When a human player's troops exceed the cap (due to startingTroops),
-    // redirect the would-be troop income into gold. Bonus scales linearly
-    // with surplus: at 1x surplus → +1x base rate, decaying to 0 at the cap.
-    if (
-      player.type() === PlayerType.Human &&
-      (this._gameConfig.startingTroops ?? 0) > 0
-    ) {
-      const max = this.maxTroops(player);
-      const surplus = player.troops() - max;
-      if (surplus > 0) {
-        const bonusRatio = surplus / max;
-        rate += BigInt(Math.floor(Number(baseRate) * multiplier * bonusRatio));
-      }
-    }
-
+    const rate = BigInt(Math.floor(Number(baseRate) * multiplier));
     return rate;
   }
 

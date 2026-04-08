@@ -48,6 +48,13 @@ export class SendBreakAllianceIntentEvent implements GameEvent {
   ) {}
 }
 
+export class SendForceAllianceIntentEvent implements GameEvent {
+  constructor(
+    public readonly playerA: PlayerView,
+    public readonly playerB: PlayerView,
+  ) {}
+}
+
 export class SendUpgradeStructureIntentEvent implements GameEvent {
   constructor(
     public readonly unitId: number,
@@ -207,6 +214,9 @@ export class Transport {
     );
     this.eventBus.on(SendBreakAllianceIntentEvent, (e) =>
       this.onBreakAllianceRequestUIEvent(e),
+    );
+    this.eventBus.on(SendForceAllianceIntentEvent, (e) =>
+      this.onForceAllianceUIEvent(e),
     );
     this.eventBus.on(SendSpawnIntentEvent, (e) =>
       this.onSendSpawnIntentEvent(e),
@@ -454,6 +464,14 @@ export class Transport {
     this.sendIntent({
       type: "breakAlliance",
       recipient: event.recipient.id(),
+    });
+  }
+
+  private onForceAllianceUIEvent(event: SendForceAllianceIntentEvent) {
+    this.sendIntent({
+      type: "forceAlliance",
+      playerA: event.playerA.id(),
+      playerB: event.playerB.id(),
     });
   }
 

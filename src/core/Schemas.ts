@@ -36,6 +36,7 @@ export type Intent =
   | AllianceRejectIntent
   | AllianceExtensionIntent
   | BreakAllianceIntent
+  | ForceAllianceIntent
   | TargetPlayerIntent
   | EmojiIntent
   | DonateGoldIntent
@@ -61,6 +62,7 @@ export type CancelBoatIntent = z.infer<typeof CancelBoatIntentSchema>;
 export type AllianceRequestIntent = z.infer<typeof AllianceRequestIntentSchema>;
 export type AllianceRejectIntent = z.infer<typeof AllianceRejectIntentSchema>;
 export type BreakAllianceIntent = z.infer<typeof BreakAllianceIntentSchema>;
+export type ForceAllianceIntent = z.infer<typeof ForceAllianceIntentSchema>;
 export type TargetPlayerIntent = z.infer<typeof TargetPlayerIntentSchema>;
 export type EmojiIntent = z.infer<typeof EmojiIntentSchema>;
 export type DonateGoldIntent = z.infer<typeof DonateGoldIntentSchema>;
@@ -256,7 +258,7 @@ export const GameConfigSchema = z.object({
   playerTeams: TeamCountConfigSchema.optional(),
   goldMultiplier: z.number().min(0.1).max(1000).nullable().optional(),
   startingGold: z.number().int().min(0).max(1000000000).nullable().optional(),
-  startingTroops: z.number().int().min(0).max(1000000000).optional(),
+  startingTroops: z.number().int().min(0).max(1000000000).nullable().optional(),
 });
 
 export const TeamSchema = z.string();
@@ -340,6 +342,12 @@ export const AllianceRejectIntentSchema = z.object({
 export const BreakAllianceIntentSchema = z.object({
   type: z.literal("breakAlliance"),
   recipient: ID,
+});
+
+export const ForceAllianceIntentSchema = z.object({
+  type: z.literal("forceAlliance"),
+  playerA: ID,
+  playerB: ID,
 });
 
 export const TargetPlayerIntentSchema = z.object({
@@ -448,6 +456,7 @@ const IntentSchema = z.discriminatedUnion("type", [
   AllianceRequestIntentSchema,
   AllianceRejectIntentSchema,
   BreakAllianceIntentSchema,
+  ForceAllianceIntentSchema,
   TargetPlayerIntentSchema,
   EmojiIntentSchema,
   DonateGoldIntentSchema,

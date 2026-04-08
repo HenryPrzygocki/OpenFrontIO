@@ -5,6 +5,7 @@ import { assetUrl } from "../../../core/AssetUrls";
 import { EventBus } from "../../../core/EventBus";
 import {
   AllPlayers,
+  GameType,
   PlayerActions,
   PlayerProfile,
   PlayerType,
@@ -26,6 +27,7 @@ import {
   SendEmbargoAllIntentEvent,
   SendEmbargoIntentEvent,
   SendEmojiIntentEvent,
+  SendForceAllianceIntentEvent,
   SendTargetPlayerIntentEvent,
 } from "../../Transport";
 import {
@@ -72,6 +74,7 @@ export class PlayerPanel extends LitElement implements Layer {
   @state() private otherProfile: PlayerProfile | null = null;
   @state() private suppressNextHide: boolean = false;
   @state() private moderationTarget: PlayerView | null = null;
+  @state() private forceAlliancePending: PlayerView | null = null;
 
   private ctModal: ChatModal;
 
@@ -198,6 +201,28 @@ export class PlayerPanel extends LitElement implements Layer {
     e.stopPropagation();
     this.eventBus.emit(new SendBreakAllianceIntentEvent(myPlayer, other));
     this.hide();
+  }
+
+  private handleForceAllianceFirstClick(e: Event, other: PlayerView) {
+    e.stopPropagation();
+    this.forceAlliancePending = other;
+    this.hide();
+  }
+
+  private handleForceAllianceSecondClick(e: Event, other: PlayerView) {
+    e.stopPropagation();
+    if (this.forceAlliancePending) {
+      this.eventBus.emit(
+        new SendForceAllianceIntentEvent(this.forceAlliancePending, other),
+      );
+      this.forceAlliancePending = null;
+    }
+    this.hide();
+  }
+
+  private cancelForceAlliance(e: Event) {
+    e.stopPropagation();
+    this.forceAlliancePending = null;
   }
 
   private openSendTroops(target: PlayerView) {
@@ -706,6 +731,21 @@ export class PlayerPanel extends LitElement implements Layer {
     const canDonateTroops = this.actions?.interaction?.canDonateTroops;
     const canSendAllianceRequest =
       this.actions?.interaction?.canSendAllianceRequest;
+
+    const isSingleplayer =
+      this.g.config().gameConfig().gameType === GameType.Singleplayer;
+    const canForceAlliance =
+      isSingleplayer &&
+      other !== my &&
+      other.type() !== PlayerType.Human &&
+      !this.forceAlliancePending;
+    const canCompleteForceAlliance =
+      isSingleplayer &&
+      this.forceAlliancePending !== null &&
+      other !== my &&
+      other !== this.forceAlliancePending &&
+      other.type() !== PlayerType.Human &&
+      !other.isAlliedWith(this.forceAlliancePending);
     const canSendEmoji =
       other === myPlayer
         ? this.actions?.canSendEmojiAllPlayers
@@ -811,6 +851,28 @@ export class PlayerPanel extends LitElement implements Layer {
                       title: translateText("player_panel.send_alliance"),
                       label: translateText("player_panel.send_alliance"),
                       type: "indigo",
+                    })
+                  : ""}
+                ${canCompleteForceAlliance
+                  ? actionButton({
+                      onClick: (e: MouseEvent) =>
+                        this.handleForceAllianceSecondClick(e, other),
+                      icon: allianceIcon,
+                      iconAlt: "Force Alliance",
+                      title: `Force ally with ${this.forceAlliancePending!.displayName()}`,
+                      label: `Ally: ${this.forceAlliancePending!.displayName()}`,
+                      type: "green",
+                    })
+                  : ""}
+                ${canForceAlliance
+                  ? actionButton({
+                      onClick: (e: MouseEvent) =>
+                        this.handleForceAllianceFirstClick(e, other),
+                      icon: allianceIcon,
+                      iconAlt: "Force Alliance",
+                      title: "Force alliance between two non-human players",
+                      label: "Force Ally",
+                      type: "sky",
                     })
                   : ""}
               </div>
