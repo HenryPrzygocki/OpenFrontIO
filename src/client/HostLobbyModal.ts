@@ -837,28 +837,25 @@ export class HostLobbyModal extends BaseModal {
             disabledUnits: this.disabledUnits,
             spawnImmunityDuration: this.spawnImmunity
               ? spawnImmunityTicks
-              : undefined,
+              : null,
             playerTeams: this.teamCount,
             nations: sliderToNationsConfig(
               this.nations,
               this.defaultNationCount,
             ),
-            maxTimerValue:
-              this.maxTimer === true ? this.maxTimerValue : undefined,
+            maxTimerValue: this.maxTimer === true ? this.maxTimerValue : null,
             goldMultiplier:
-              this.goldMultiplier === true
-                ? this.goldMultiplierValue
-                : undefined,
+              this.goldMultiplier === true ? this.goldMultiplierValue : null,
             startingGold:
               this.startingGold === true && this.startingGoldValue !== undefined
                 ? Math.round(this.startingGoldValue * 1_000_000)
+                : null,
+            disableAlliances: this.disableAlliances || null,
                 : undefined,
             startingTroops:
               this.startingTroops === true &&
               this.startingTroopsValue !== undefined
                 ? Math.round(this.startingTroopsValue * 1_000_000)
-                : undefined,
-            disableAlliances: this.disableAlliances || undefined,
           } satisfies Partial<GameConfig>,
         },
         bubbles: true,
