@@ -547,6 +547,9 @@ export class DefaultConfig implements Config {
     if (this.isUnitDisabled(UnitType.TransportShip)) {
       return 0;
     }
+    if (this._gameConfig.gameType === GameType.Singleplayer) {
+      return Infinity;
+    }
     return 3;
   }
   numSpawnPhaseTurns(): number {
@@ -760,7 +763,7 @@ export class DefaultConfig implements Config {
     }
     if (this.infiniteTroops()) return 1_000_000;
     const startTroops = this._gameConfig.startingTroops ?? 0;
-    return startTroops > 0 ? startTroops : 25_000;
+    return startTroops > 0 ? startTroops * 10 : 25_000;
   }
 
   maxTroops(player: Player | PlayerView): number {

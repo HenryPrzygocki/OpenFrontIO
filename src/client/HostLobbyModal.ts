@@ -851,11 +851,11 @@ export class HostLobbyModal extends BaseModal {
                 ? Math.round(this.startingGoldValue * 1_000_000)
                 : null,
             disableAlliances: this.disableAlliances || null,
-                : undefined,
             startingTroops:
               this.startingTroops === true &&
               this.startingTroopsValue !== undefined
                 ? Math.round(this.startingTroopsValue * 1_000_000)
+                : null,
           } satisfies Partial<GameConfig>,
         },
         bubbles: true,
