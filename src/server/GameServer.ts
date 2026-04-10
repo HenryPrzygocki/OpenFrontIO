@@ -175,6 +175,9 @@ export class GameServer {
       this.gameConfig.disableAlliances =
         gameConfig.disableAlliances ?? undefined;
     }
+    if (gameConfig.waterNukes !== undefined) {
+      this.gameConfig.waterNukes = gameConfig.waterNukes ?? undefined;
+    }
   }
 
   private isKicked(clientID: ClientID): boolean {
