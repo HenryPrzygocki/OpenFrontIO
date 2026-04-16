@@ -7,6 +7,7 @@ import { AllianceRejectExecution } from "./alliance/AllianceRejectExecution";
 import { AllianceRequestExecution } from "./alliance/AllianceRequestExecution";
 import { BreakAllianceExecution } from "./alliance/BreakAllianceExecution";
 import { ForceAllianceExecution } from "./alliance/ForceAllianceExecution";
+import { ForceBreakAllianceExecution } from "./alliance/ForceBreakAllianceExecution";
 import { AttackExecution } from "./AttackExecution";
 import { BoatRetreatExecution } from "./BoatRetreatExecution";
 import { ConstructionExecution } from "./ConstructionExecution";
@@ -82,6 +83,12 @@ export class Executor {
         return new BreakAllianceExecution(player, intent.recipient);
       case "forceAlliance":
         return new ForceAllianceExecution(player, intent.playerA, intent.playerB);
+      case "forceBreakAlliance":
+        return new ForceBreakAllianceExecution(
+          player,
+          intent.playerA,
+          intent.playerB,
+        );
       case "targetPlayer":
         return new TargetPlayerExecution(player, intent.target);
       case "emoji":

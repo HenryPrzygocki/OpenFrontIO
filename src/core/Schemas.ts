@@ -37,6 +37,7 @@ export type Intent =
   | AllianceExtensionIntent
   | BreakAllianceIntent
   | ForceAllianceIntent
+  | ForceBreakAllianceIntent
   | TargetPlayerIntent
   | EmojiIntent
   | DonateGoldIntent
@@ -63,6 +64,9 @@ export type AllianceRequestIntent = z.infer<typeof AllianceRequestIntentSchema>;
 export type AllianceRejectIntent = z.infer<typeof AllianceRejectIntentSchema>;
 export type BreakAllianceIntent = z.infer<typeof BreakAllianceIntentSchema>;
 export type ForceAllianceIntent = z.infer<typeof ForceAllianceIntentSchema>;
+export type ForceBreakAllianceIntent = z.infer<
+  typeof ForceBreakAllianceIntentSchema
+>;
 export type TargetPlayerIntent = z.infer<typeof TargetPlayerIntentSchema>;
 export type EmojiIntent = z.infer<typeof EmojiIntentSchema>;
 export type DonateGoldIntent = z.infer<typeof DonateGoldIntentSchema>;
@@ -366,6 +370,12 @@ export const ForceAllianceIntentSchema = z.object({
   playerB: ID,
 });
 
+export const ForceBreakAllianceIntentSchema = z.object({
+  type: z.literal("forceBreakAlliance"),
+  playerA: ID,
+  playerB: ID,
+});
+
 export const TargetPlayerIntentSchema = z.object({
   type: z.literal("targetPlayer"),
   target: ID,
@@ -473,6 +483,7 @@ const IntentSchema = z.discriminatedUnion("type", [
   AllianceRejectIntentSchema,
   BreakAllianceIntentSchema,
   ForceAllianceIntentSchema,
+  ForceBreakAllianceIntentSchema,
   TargetPlayerIntentSchema,
   EmojiIntentSchema,
   DonateGoldIntentSchema,

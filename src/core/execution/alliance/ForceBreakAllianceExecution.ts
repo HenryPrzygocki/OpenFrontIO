@@ -1,6 +1,6 @@
 import { Execution, Game, GameType, Player, PlayerID, PlayerType } from "../../game/Game";
 
-export class ForceAllianceExecution implements Execution {
+export class ForceBreakAllianceExecution implements Execution {
   private active = true;
 
   constructor(
@@ -11,19 +11,19 @@ export class ForceAllianceExecution implements Execution {
 
   init(mg: Game): void {
     if (mg.config().gameConfig().gameType !== GameType.Singleplayer) {
-      console.warn("forceAlliance is only available in singleplayer");
+      console.warn("forceBreakAlliance is only available in singleplayer");
       this.active = false;
       return;
     }
 
     if (this.requester.type() !== PlayerType.Human) {
-      console.warn("forceAlliance must be requested by the human player");
+      console.warn("forceBreakAlliance must be requested by the human player");
       this.active = false;
       return;
     }
 
     if (!mg.hasPlayer(this.playerAID) || !mg.hasPlayer(this.playerBID)) {
-      console.warn("forceAlliance: one or both players not found");
+      console.warn("forceBreakAlliance: one or both players not found");
       this.active = false;
       return;
     }
@@ -31,17 +31,14 @@ export class ForceAllianceExecution implements Execution {
     const playerA = mg.player(this.playerAID);
     const playerB = mg.player(this.playerBID);
 
-    if (playerA.isAlliedWith(playerB)) {
+    const alliance = playerA.allianceWith(playerB);
+    if (alliance === null) {
+      console.warn("forceBreakAlliance: players are not allied");
       this.active = false;
       return;
     }
 
-    // Directly create the alliance: A sends a request to B and it is immediately accepted
-    const req = playerA.createAllianceRequest(playerB);
-    if (req) {
-      req.accept();
-    }
-
+    playerA.breakAlliance(alliance);
     this.active = false;
   }
 

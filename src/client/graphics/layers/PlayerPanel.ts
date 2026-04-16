@@ -28,6 +28,7 @@ import {
   SendEmbargoIntentEvent,
   SendEmojiIntentEvent,
   SendForceAllianceIntentEvent,
+  SendForceBreakAllianceIntentEvent,
   SendTargetPlayerIntentEvent,
 } from "../../Transport";
 import {
@@ -75,6 +76,7 @@ export class PlayerPanel extends LitElement implements Layer {
   @state() private suppressNextHide: boolean = false;
   @state() private moderationTarget: PlayerView | null = null;
   @state() private forceAlliancePending: PlayerView | null = null;
+  @state() private forceBreakPending: PlayerView | null = null;
 
   private ctModal: ChatModal;
 
@@ -223,6 +225,38 @@ export class PlayerPanel extends LitElement implements Layer {
   private cancelForceAlliance(e: Event) {
     e.stopPropagation();
     this.forceAlliancePending = null;
+  }
+
+  private handleForceAllianceWithMe(
+    e: Event,
+    my: PlayerView,
+    other: PlayerView,
+  ) {
+    e.stopPropagation();
+    this.eventBus.emit(new SendForceAllianceIntentEvent(my, other));
+    this.hide();
+  }
+
+  private handleForceBreakFirstClick(e: Event, other: PlayerView) {
+    e.stopPropagation();
+    this.forceBreakPending = other;
+    this.hide();
+  }
+
+  private handleForceBreakSecondClick(e: Event, other: PlayerView) {
+    e.stopPropagation();
+    if (this.forceBreakPending) {
+      this.eventBus.emit(
+        new SendForceBreakAllianceIntentEvent(this.forceBreakPending, other),
+      );
+      this.forceBreakPending = null;
+    }
+    this.hide();
+  }
+
+  private cancelForceBreak(e: Event) {
+    e.stopPropagation();
+    this.forceBreakPending = null;
   }
 
   private openSendTroops(target: PlayerView) {
@@ -734,11 +768,13 @@ export class PlayerPanel extends LitElement implements Layer {
 
     const isSingleplayer =
       this.g.config().gameConfig().gameType === GameType.Singleplayer;
+    // Force ally two non-human players together (two-click flow)
     const canForceAlliance =
       isSingleplayer &&
       other !== my &&
       other.type() !== PlayerType.Human &&
-      !this.forceAlliancePending;
+      !this.forceAlliancePending &&
+      !this.forceBreakPending;
     const canCompleteForceAlliance =
       isSingleplayer &&
       this.forceAlliancePending !== null &&
@@ -746,6 +782,25 @@ export class PlayerPanel extends LitElement implements Layer {
       other !== this.forceAlliancePending &&
       other.type() !== PlayerType.Human &&
       !other.isAlliedWith(this.forceAlliancePending);
+    // Force ally yourself with a non-human player (single-click)
+    const canForceAllianceWithMe =
+      isSingleplayer &&
+      other !== my &&
+      other.type() !== PlayerType.Human &&
+      !other.isAlliedWith(my!) &&
+      !this.forceAlliancePending &&
+      !this.forceBreakPending;
+    // Force break alliance between two non-human players, or between human and a non-human (two-click flow)
+    const canForceBreak =
+      isSingleplayer &&
+      other.type() !== PlayerType.Human &&
+      !this.forceAlliancePending &&
+      !this.forceBreakPending;
+    const canCompleteForceBreak =
+      isSingleplayer &&
+      this.forceBreakPending !== null &&
+      other !== this.forceBreakPending &&
+      other.isAlliedWith(this.forceBreakPending);
     const canSendEmoji =
       other === myPlayer
         ? this.actions?.canSendEmojiAllPlayers
@@ -873,6 +928,39 @@ export class PlayerPanel extends LitElement implements Layer {
                       title: "Force alliance between two non-human players",
                       label: "Force Ally",
                       type: "sky",
+                    })
+                  : ""}
+                ${canForceAllianceWithMe
+                  ? actionButton({
+                      onClick: (e: MouseEvent) =>
+                        this.handleForceAllianceWithMe(e, my!, other),
+                      icon: allianceIcon,
+                      iconAlt: "Force Ally With Me",
+                      title: "Force alliance between you and this player",
+                      label: "Ally Me",
+                      type: "sky",
+                    })
+                  : ""}
+                ${canCompleteForceBreak
+                  ? actionButton({
+                      onClick: (e: MouseEvent) =>
+                        this.handleForceBreakSecondClick(e, other),
+                      icon: breakAllianceIcon,
+                      iconAlt: "Force Break Alliance",
+                      title: `Force break alliance with ${this.forceBreakPending!.displayName()}`,
+                      label: `Break: ${this.forceBreakPending!.displayName()}`,
+                      type: "red",
+                    })
+                  : ""}
+                ${canForceBreak
+                  ? actionButton({
+                      onClick: (e: MouseEvent) =>
+                        this.handleForceBreakFirstClick(e, other),
+                      icon: breakAllianceIcon,
+                      iconAlt: "Force Break Alliance",
+                      title: "Force break alliance between two players",
+                      label: "Force Break",
+                      type: "red",
                     })
                   : ""}
               </div>
