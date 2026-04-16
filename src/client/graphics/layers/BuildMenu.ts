@@ -6,6 +6,7 @@ import { EventBus } from "../../../core/EventBus";
 import {
   BuildableUnit,
   BuildMenus,
+  GameType,
   Gold,
   PlayerBuildableUnitType,
   UnitType,
@@ -382,14 +383,20 @@ export class BuildMenu extends LitElement implements Layer {
     return player.totalUnitLevels(item.unitType).toString();
   }
 
-  public sendBuildOrUpgrade(buildableUnit: BuildableUnit, tile: TileRef): void {
+  public sendBuildOrUpgrade(
+    buildableUnit: BuildableUnit,
+    tile: TileRef,
+    count: number = 1,
+  ): void {
     if (buildableUnit.canUpgrade !== false) {
-      this.eventBus.emit(
-        new SendUpgradeStructureIntentEvent(
-          buildableUnit.canUpgrade,
-          buildableUnit.type,
-        ),
-      );
+      for (let i = 0; i < count; i++) {
+        this.eventBus.emit(
+          new SendUpgradeStructureIntentEvent(
+            buildableUnit.canUpgrade,
+            buildableUnit.type,
+          ),
+        );
+      }
     } else if (buildableUnit.canBuild) {
       const rocketDirectionUp =
         buildableUnit.type === UnitType.AtomBomb ||
@@ -422,15 +429,28 @@ export class BuildMenu extends LitElement implements Layer {
                 const enabled =
                   buildableUnit.canBuild !== false ||
                   buildableUnit.canUpgrade !== false;
+                const isSingleplayer =
+                  this.game?.config().gameConfig().gameType ===
+                  GameType.Singleplayer;
+                const upgradable = buildableUnit.canUpgrade !== false;
                 return html`
                   <button
                     class="build-button"
-                    @click=${() =>
-                      this.sendBuildOrUpgrade(buildableUnit, this.clickedTile)}
+                    @click=${(e: MouseEvent) => {
+                      const count =
+                        isSingleplayer && upgradable && e.shiftKey ? 10 : 1;
+                      this.sendBuildOrUpgrade(
+                        buildableUnit,
+                        this.clickedTile,
+                        count,
+                      );
+                    }}
                     ?disabled=${!enabled}
                     title=${!enabled
                       ? translateText("build_menu.not_enough_money")
-                      : ""}
+                      : isSingleplayer && upgradable
+                        ? "Shift+click to upgrade 10x"
+                        : ""}
                   >
                     <img
                       src=${item.icon}
