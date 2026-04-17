@@ -40,6 +40,7 @@ export class ForceAllianceExecution implements Execution {
     const req = playerA.createAllianceRequest(playerB);
     if (req) {
       req.accept();
+      playerA.allianceWith(playerB)?.makePermanent();
     }
 
     this.active = false;

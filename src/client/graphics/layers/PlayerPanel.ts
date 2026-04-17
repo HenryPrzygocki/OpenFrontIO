@@ -133,7 +133,10 @@ export class PlayerPanel extends LitElement implements Layer {
           const remainingTicks = expiresAt - this.g.ticks();
           const remainingSeconds = Math.max(0, Math.floor(remainingTicks / 10)); // 10 ticks per second
 
-          if (remainingTicks > 0) {
+          if (expiresAt >= Number.MAX_SAFE_INTEGER) {
+            this.allianceExpirySeconds = null;
+            this.allianceExpiryText = "Permanent";
+          } else if (remainingTicks > 0) {
             this.allianceExpirySeconds = remainingSeconds;
             this.allianceExpiryText = renderDuration(remainingSeconds);
           } else {

@@ -531,6 +531,7 @@ export interface MutableAlliance extends Alliance {
   onlyOneAgreedToExtend(): boolean;
 
   agreedToExtend(player: Player): boolean;
+  makePermanent(): void;
 }
 
 export class PlayerInfo {

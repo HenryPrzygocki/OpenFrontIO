@@ -88,4 +88,8 @@ export class AllianceImpl implements MutableAlliance {
   expiresAt(): Tick {
     return this.expiresAt_;
   }
+
+  makePermanent(): void {
+    this.expiresAt_ = Number.MAX_SAFE_INTEGER;
+  }
 }
