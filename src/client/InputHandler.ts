@@ -421,7 +421,15 @@ export class InputHandler {
       const matchedBuild = this.resolveBuildKeybind(e.code, e.shiftKey);
       if (matchedBuild !== null) {
         e.preventDefault();
-        this.setGhostStructure(matchedBuild);
+        // Warship deploy mode: pressing the key again while already in warship mode exits it
+        if (
+          matchedBuild === UnitType.Warship &&
+          this.uiState.ghostStructure === UnitType.Warship
+        ) {
+          this.setGhostStructure(null);
+        } else {
+          this.setGhostStructure(matchedBuild);
+        }
       }
 
       if (this.keybindMatchesEvent(e, this.keybinds.swapDirection)) {

@@ -9,6 +9,7 @@ import { wouldNukeBreakAlliance } from "../../../core/execution/Util";
 import {
   BuildableUnit,
   Cell,
+  GameType,
   PlayerBuildableUnitType,
   PlayerID,
   Structures,
@@ -45,9 +46,13 @@ import {
 } from "./StructureDrawingUtils";
 const bitmapFont = assetUrl("fonts/round_6x6_modified.xml");
 
-/** True for nuke types (AtomBomb, HydrogenBomb): ghost is preserved after placement so user can place multiple or keep selection (Enter/key confirm). */
+/** True for unit types where the ghost is preserved after placement so the user can place multiple in a row. */
 export function shouldPreserveGhostAfterBuild(unitType: UnitType): boolean {
-  return unitType === UnitType.AtomBomb || unitType === UnitType.HydrogenBomb;
+  return (
+    unitType === UnitType.AtomBomb ||
+    unitType === UnitType.HydrogenBomb ||
+    unitType === UnitType.Warship
+  );
 }
 
 extend([a11yPlugin]);
@@ -102,6 +107,8 @@ export class StructureIconsLayer implements Layer {
   private pendingConfirm: MouseUpEvent | null = null;
   private hasHiddenStructure = false;
   potentialUpgrade: StructureRenderInfo | undefined;
+  private shiftHeld = false;
+  private multiplierBadge: PIXI.BitmapText | null = null;
 
   constructor(
     private game: GameView,
@@ -185,6 +192,19 @@ export class StructureIconsLayer implements Layer {
         new MouseUpEvent(this.mousePos.x, this.mousePos.y),
       ),
     );
+
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "ShiftLeft" || e.code === "ShiftRight") {
+        this.shiftHeld = true;
+        this.updateMultiplierBadge();
+      }
+    });
+    window.addEventListener("keyup", (e) => {
+      if (e.code === "ShiftLeft" || e.code === "ShiftRight") {
+        this.shiftHeld = false;
+        this.updateMultiplierBadge();
+      }
+    });
 
     window.addEventListener("resize", () => this.resizeCanvas());
     await this.setupRenderer();
@@ -385,6 +405,8 @@ export class StructureIconsLayer implements Layer {
         this.ghostUnit.container.scale.set(s);
         this.ghostUnit.range?.scale.set(this.transformHandler.scale);
 
+        this.updateMultiplierBadge();
+
         if (this.pendingConfirm !== null) {
           const ev = this.pendingConfirm;
           this.pendingConfirm = null;
@@ -393,6 +415,30 @@ export class StructureIconsLayer implements Layer {
           }
         }
       });
+  }
+
+  private updateMultiplierBadge() {
+    if (!this.ghostUnit || !this.ghostStage) return;
+    const isSingleplayer =
+      this.game.config().gameConfig().gameType === GameType.Singleplayer;
+    const show =
+      isSingleplayer &&
+      this.shiftHeld &&
+      this.ghostUnit.buildableUnit.canUpgrade !== false;
+
+    if (show && !this.multiplierBadge) {
+      const badge = new PIXI.BitmapText({
+        text: "10",
+        style: { fontFamily: "round_6x6_modified", fontSize: 14 },
+      });
+      badge.anchor.set(0.5);
+      badge.position.set(10, -10);
+      this.ghostUnit.container.addChild(badge);
+      this.multiplierBadge = badge;
+    } else if (!show && this.multiplierBadge) {
+      this.multiplierBadge.destroy();
+      this.multiplierBadge = null;
+    }
   }
 
   private updateGhostPrice(cost: bigint | number, showPrice: boolean) {
@@ -457,12 +503,17 @@ export class StructureIconsLayer implements Layer {
     }
     const tile = this.transformHandler.screenToWorldCoordinates(e.x, e.y);
     if (this.ghostUnit.buildableUnit.canUpgrade !== false) {
-      this.eventBus.emit(
-        new SendUpgradeStructureIntentEvent(
-          this.ghostUnit.buildableUnit.canUpgrade,
-          this.ghostUnit.buildableUnit.type,
-        ),
-      );
+      const isSingleplayer =
+        this.game.config().gameConfig().gameType === GameType.Singleplayer;
+      const count = isSingleplayer && this.shiftHeld ? 10 : 1;
+      for (let i = 0; i < count; i++) {
+        this.eventBus.emit(
+          new SendUpgradeStructureIntentEvent(
+            this.ghostUnit.buildableUnit.canUpgrade,
+            this.ghostUnit.buildableUnit.type,
+          ),
+        );
+      }
       this.removeGhostStructure();
     } else if (this.ghostUnit.buildableUnit.canBuild) {
       const unitType = this.ghostUnit.buildableUnit.type;
@@ -535,6 +586,10 @@ export class StructureIconsLayer implements Layer {
 
   private clearGhostStructure() {
     this.pendingConfirm = null;
+    if (this.multiplierBadge) {
+      this.multiplierBadge.destroy();
+      this.multiplierBadge = null;
+    }
     if (this.ghostUnit) {
       this.ghostUnit.container.destroy();
       this.ghostUnit.range?.destroy();
