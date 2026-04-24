@@ -1,6 +1,11 @@
 import { EventBus } from "../../../core/EventBus";
+import { GameType } from "../../../core/game/Game";
 import { GameView, PlayerView } from "../../../core/game/GameView";
-import { SendQuickChatEvent } from "../../Transport";
+import {
+  SendForceAllianceIntentEvent,
+  SendForceBreakAllianceIntentEvent,
+  SendQuickChatEvent,
+} from "../../Transport";
 import { translateText } from "../../Utils";
 import { ChatModal, QuickChatPhrase, quickChatPhrases } from "./ChatModal";
 import { COLORS, MenuElement, MenuElementParams } from "./RadialMenuElements";
@@ -36,63 +41,99 @@ export class ChatIntegration {
       throw new Error("Current player not found");
     }
 
-    return this.ctModal.categories.map((category) => {
-      const categoryTranslation = translateText(`chat.cat.${category.id}`);
+    const isSingleplayer =
+      this.game.config().gameConfig().gameType === GameType.Singleplayer;
 
-      const categoryColor =
-        COLORS.chat[category.id as keyof typeof COLORS.chat] ||
-        COLORS.chat.default;
-      const phrases = quickChatPhrases[category.id] || [];
+    return this.ctModal.categories
+      .filter((category) => category.id !== "singleplayer" || isSingleplayer)
+      .map((category) => {
+        const categoryTranslation = translateText(`chat.cat.${category.id}`);
 
-      const phraseItems: MenuElement[] = phrases.map(
-        (phrase: QuickChatPhrase) => {
-          const phraseText = translateText(`chat.${category.id}.${phrase.key}`);
+        const categoryColor =
+          COLORS.chat[category.id as keyof typeof COLORS.chat] ||
+          COLORS.chat.default;
+        const phrases = quickChatPhrases[category.id] || [];
 
-          return {
-            id: `phrase-${category.id}-${phrase.key}`,
-            name: phraseText,
-            disabled: () => false,
-            text: this.shortenText(phraseText),
-            fontSize: "10px",
-            color: categoryColor,
-            tooltipItems: [
-              {
-                text: phraseText,
-                className: "description",
-              },
-            ],
-            action: (params: MenuElementParams) => {
-              if (phrase.requiresPlayer) {
-                this.ctModal.openWithSelection(
-                  category.id,
-                  phrase.key,
-                  myPlayer,
-                  recipient,
-                );
-              } else {
-                this.eventBus.emit(
-                  new SendQuickChatEvent(
+        const phraseItems: MenuElement[] = phrases.map(
+          (phrase: QuickChatPhrase) => {
+            const phraseText = translateText(
+              `chat.${category.id}.${phrase.key}`,
+            );
+
+            return {
+              id: `phrase-${category.id}-${phrase.key}`,
+              name: phraseText,
+              disabled: () => false,
+              text: this.shortenText(phraseText),
+              fontSize: "10px",
+              color: categoryColor,
+              tooltipItems: [{ text: phraseText, className: "description" }],
+              action: (_params: MenuElementParams) => {
+                if (category.id === "singleplayer") {
+                  this.handleSingleplayerPhrase(phrase.key, myPlayer);
+                } else if (phrase.requiresPlayer) {
+                  this.ctModal.openWithSelection(
+                    category.id,
+                    phrase.key,
+                    myPlayer,
                     recipient,
-                    `${category.id}.${phrase.key}`,
-                    undefined,
-                  ),
-                );
-              }
-            },
-          };
+                  );
+                } else {
+                  this.eventBus.emit(
+                    new SendQuickChatEvent(
+                      recipient,
+                      `${category.id}.${phrase.key}`,
+                      undefined,
+                    ),
+                  );
+                }
+              },
+            };
+          },
+        );
+
+        return {
+          id: `chat-category-${category.id}`,
+          name: categoryTranslation,
+          disabled: () => false,
+          text: categoryTranslation,
+          color: categoryColor,
+          _action: () => {},
+          subMenu: () => phraseItems,
+        };
+      });
+  }
+
+  private handleSingleplayerPhrase(phraseKey: string, myPlayer: PlayerView) {
+    if (phraseKey === "force_ally") {
+      this.ctModal.openWithAction(
+        "singleplayer",
+        "force_ally",
+        myPlayer,
+        (p) => p.isAlive() && !p.isAlliedWith(myPlayer),
+        (target) => {
+          if (target) {
+            this.eventBus.emit(
+              new SendForceAllianceIntentEvent(myPlayer, target),
+            );
+          }
         },
       );
-
-      return {
-        id: `chat-category-${category.id}`,
-        name: categoryTranslation,
-        disabled: () => false,
-        text: categoryTranslation,
-        color: categoryColor,
-        _action: () => {}, // Empty action placeholder for RadialMenu
-        subMenu: () => phraseItems,
-      };
-    });
+    } else if (phraseKey === "force_break") {
+      this.ctModal.openWithAction(
+        "singleplayer",
+        "force_break",
+        myPlayer,
+        (p) => p.isAlive() && p.isAlliedWith(myPlayer),
+        (target) => {
+          if (target) {
+            this.eventBus.emit(
+              new SendForceBreakAllianceIntentEvent(myPlayer, target),
+            );
+          }
+        },
+      );
+    }
   }
 
   shortenText(text: string, maxLength = 15): string {

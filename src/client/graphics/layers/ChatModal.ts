@@ -43,6 +43,8 @@ export class ChatModal extends LitElement {
 
   private recipient: PlayerView;
   private sender: PlayerView;
+  private playerFilter: ((p: PlayerView) => boolean) | null = null;
+  private onSendCallback: ((player: PlayerView | null) => void) | null = null;
   public eventBus: EventBus;
 
   public g: GameView;
@@ -65,6 +67,7 @@ export class ChatModal extends LitElement {
     { id: "greet" },
     { id: "misc" },
     { id: "warnings" },
+    { id: "singleplayer" },
   ];
 
   private getPhrasesForCategory(categoryId: string) {
@@ -225,12 +228,9 @@ export class ChatModal extends LitElement {
   }
 
   private sendChatMessage() {
-    console.log("Sent message:", this.previewText);
-    console.log("Sender:", this.sender);
-    console.log("Recipient:", this.recipient);
-    console.log("Key:", this.selectedQuickChatKey);
-
-    if (this.sender && this.recipient && this.selectedQuickChatKey) {
+    if (this.onSendCallback) {
+      this.onSendCallback(this.selectedPlayer);
+    } else if (this.sender && this.recipient && this.selectedQuickChatKey) {
       this.eventBus.emit(
         new SendQuickChatEvent(
           this.recipient,
@@ -239,13 +239,7 @@ export class ChatModal extends LitElement {
         ),
       );
     }
-
-    this.previewText = null;
-    this.selectedCategory = null;
-    this.requiresPlayerSelection = false;
     this.close();
-
-    this.requestUpdate();
   }
 
   private onPlayerSearchInput(e: Event) {
@@ -255,16 +249,20 @@ export class ChatModal extends LitElement {
   }
 
   private getSortedFilteredPlayers(): PlayerView[] {
-    const sorted = [...this.players].sort((a, b) =>
+    const pool = this.playerFilter
+      ? this.players.filter(this.playerFilter)
+      : this.players;
+    const sorted = [...pool].sort((a, b) =>
       a.displayName().localeCompare(b.displayName()),
     );
-    const filtered = sorted.filter((p) =>
-      p.displayName().toLowerCase().includes(this.playerSearchQuery),
+    const query = this.playerSearchQuery;
+    const matching = sorted.filter((p) =>
+      p.displayName().toLowerCase().includes(query),
     );
-    const others = sorted.filter(
-      (p) => !p.displayName().toLowerCase().includes(this.playerSearchQuery),
+    const rest = sorted.filter(
+      (p) => !p.displayName().toLowerCase().includes(query),
     );
-    return [...filtered, ...others];
+    return [...matching, ...rest];
   }
 
   private getFullQuickChatKey(category: string, phraseKey: string): string {
@@ -289,9 +287,33 @@ export class ChatModal extends LitElement {
   public close() {
     this.selectedCategory = null;
     this.selectedPhraseText = null;
+    this.selectedPlayer = null;
     this.previewText = null;
     this.requiresPlayerSelection = false;
+    this.playerFilter = null;
+    this.onSendCallback = null;
+    this.playerSearchQuery = "";
     this.modalEl?.close();
+  }
+
+  public openWithAction(
+    categoryId: string,
+    phraseKey: string,
+    sender: PlayerView,
+    playerFilter: ((p: PlayerView) => boolean) | null,
+    onSend: (player: PlayerView | null) => void,
+  ) {
+    this.players = this.g.players().filter((p) => p.isAlive() && p !== sender);
+    this.sender = sender;
+    this.playerFilter = playerFilter;
+    this.onSendCallback = onSend;
+    this.selectCategory(categoryId);
+    const phrase = this.getPhrasesForCategory(categoryId).find(
+      (p) => p.key === phraseKey,
+    );
+    if (phrase) this.selectPhrase(phrase);
+    this.requestUpdate();
+    this.modalEl?.open();
   }
 
   public setRecipient(value: PlayerView) {

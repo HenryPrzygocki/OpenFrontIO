@@ -242,5 +242,15 @@
       "key": "stop_trading_all",
       "requiresPlayer": false
     }
+  ],
+  "singleplayer": [
+    {
+      "key": "force_ally",
+      "requiresPlayer": true
+    },
+    {
+      "key": "force_break",
+      "requiresPlayer": true
+    }
   ]
 }

@@ -1,4 +1,11 @@
-import { Execution, Game, GameType, Player, PlayerID, PlayerType } from "../../game/Game";
+import {
+  Execution,
+  Game,
+  GameType,
+  Player,
+  PlayerID,
+  PlayerType,
+} from "../../game/Game";
 
 export class ForceAllianceExecution implements Execution {
   private active = true;
@@ -36,12 +43,11 @@ export class ForceAllianceExecution implements Execution {
       return;
     }
 
-    // Directly create the alliance: A sends a request to B and it is immediately accepted
+    // createAllianceRequest may handle the accept internally (e.g. when a
+    // reverse request already exists), so makePermanent is called unconditionally.
     const req = playerA.createAllianceRequest(playerB);
-    if (req) {
-      req.accept();
-      playerA.allianceWith(playerB)?.makePermanent();
-    }
+    if (req) req.accept();
+    playerA.allianceWith(playerB)?.makePermanent();
 
     this.active = false;
   }

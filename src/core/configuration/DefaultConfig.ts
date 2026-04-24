@@ -900,8 +900,7 @@ export class DefaultConfig implements Config {
     } else {
       baseRate = 100n;
     }
-    const rate = BigInt(Math.floor(Number(baseRate) * multiplier));
-    return rate;
+    return BigInt(Math.floor(Number(baseRate) * multiplier));
   }
 
   nukeMagnitudes(unitType: UnitType): NukeMagnitude {

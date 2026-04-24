@@ -1,4 +1,11 @@
-import { Execution, Game, GameType, Player, PlayerID, PlayerType } from "../../game/Game";
+import {
+  Execution,
+  Game,
+  GameType,
+  Player,
+  PlayerID,
+  PlayerType,
+} from "../../game/Game";
 
 export class ForceBreakAllianceExecution implements Execution {
   private active = true;

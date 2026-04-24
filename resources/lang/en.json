@@ -691,7 +691,8 @@
       "defend": "Defend",
       "greet": "Greetings",
       "misc": "Miscellaneous",
-      "warnings": "Warnings"
+      "warnings": "Warnings",
+      "singleplayer": "Singleplayer"
     },
     "help": {
       "troops": "Please give me troops!",
@@ -762,6 +763,10 @@
       "cheating": "[P1] is cheating!",
       "stop_trading": "Stop trading with [P1]!",
       "stop_trading_all": "Please stop trading with all!"
+    },
+    "singleplayer": {
+      "force_ally": "Force ally with [P1]",
+      "force_break": "Force break alliance with [P1]"
     }
   },
   "build_menu": {
@@ -876,6 +881,7 @@
     "trading": "Trading",
     "active": "Active",
     "stopped": "Stopped",
+    "alliance_permanent": "Permanent",
     "alliance_time_remaining": "Alliance Expires In",
     "start_trade": "Start Trading",
     "stop_trade": "Stop Trading",
