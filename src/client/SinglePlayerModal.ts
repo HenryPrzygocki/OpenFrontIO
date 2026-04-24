@@ -58,6 +58,8 @@ const DEFAULT_OPTIONS = {
   startingGoldValue: undefined as number | undefined,
   startingTroops: false,
   startingTroopsValue: undefined as number | undefined,
+  boatSpeedBonus: false,
+  boatSpeedBonusValue: undefined as number | undefined,
   disabledUnits: [] as UnitType[],
   disableAlliances: false,
   waterNukes: false,
@@ -94,6 +96,9 @@ export class SinglePlayerModal extends BaseModal {
   @state() private startingTroops: boolean = DEFAULT_OPTIONS.startingTroops;
   @state() private startingTroopsValue: number | undefined =
     DEFAULT_OPTIONS.startingTroopsValue;
+  @state() private boatSpeedBonus: boolean = DEFAULT_OPTIONS.boatSpeedBonus;
+  @state() private boatSpeedBonusValue: number | undefined =
+    DEFAULT_OPTIONS.boatSpeedBonusValue;
 
   @state() private disabledUnits: UnitType[] = [
     ...DEFAULT_OPTIONS.disabledUnits,
@@ -244,6 +249,24 @@ export class SinglePlayerModal extends BaseModal {
         .onToggle=${this.handleStartingTroopsToggle}
         .onChange=${this.handleStartingTroopsValueChanges}
         .onKeyDown=${this.handleStartingTroopsValueKeyDown}
+      ></toggle-input-card>`,
+      html`<toggle-input-card
+        .labelKey=${"single_modal.boat_speed_bonus"}
+        .checked=${this.boatSpeedBonus}
+        .inputId=${"boat-speed-bonus-value"}
+        .inputMin=${1}
+        .inputMax=${5}
+        .inputStep=${1}
+        .inputValue=${this.boatSpeedBonusValue}
+        .inputAriaLabel=${translateText("single_modal.boat_speed_bonus")}
+        .inputPlaceholder=${translateText(
+          "single_modal.boat_speed_bonus_placeholder",
+        )}
+        .defaultInputValue=${2}
+        .minValidOnEnable=${1}
+        .onToggle=${this.handleBoatSpeedBonusToggle}
+        .onChange=${this.handleBoatSpeedBonusValueChanges}
+        .onKeyDown=${this.handleBoatSpeedBonusValueKeyDown}
       ></toggle-input-card>`,
     ];
 
@@ -413,6 +436,7 @@ export class SinglePlayerModal extends BaseModal {
       this.goldMultiplier !== DEFAULT_OPTIONS.goldMultiplier ||
       this.startingGold !== DEFAULT_OPTIONS.startingGold ||
       this.startingTroops !== DEFAULT_OPTIONS.startingTroops ||
+      this.boatSpeedBonus !== DEFAULT_OPTIONS.boatSpeedBonus ||
       this.disableAlliances !== DEFAULT_OPTIONS.disableAlliances ||
       this.waterNukes !== DEFAULT_OPTIONS.waterNukes ||
       this.disabledUnits.length > 0
@@ -443,6 +467,8 @@ export class SinglePlayerModal extends BaseModal {
     this.startingGoldValue = DEFAULT_OPTIONS.startingGoldValue;
     this.startingTroops = DEFAULT_OPTIONS.startingTroops;
     this.startingTroopsValue = DEFAULT_OPTIONS.startingTroopsValue;
+    this.boatSpeedBonus = DEFAULT_OPTIONS.boatSpeedBonus;
+    this.boatSpeedBonusValue = DEFAULT_OPTIONS.boatSpeedBonusValue;
     this.disableAlliances = DEFAULT_OPTIONS.disableAlliances;
     this.waterNukes = DEFAULT_OPTIONS.waterNukes;
   }
@@ -673,6 +699,29 @@ export class SinglePlayerModal extends BaseModal {
     }
   };
 
+  private handleBoatSpeedBonusToggle = (
+    checked: boolean,
+    value: number | string | undefined,
+  ) => {
+    this.boatSpeedBonus = checked;
+    this.boatSpeedBonusValue = toOptionalNumber(value);
+  };
+
+  private handleBoatSpeedBonusValueKeyDown = (e: KeyboardEvent) => {
+    preventDisallowedKeys(e, ["-", "+", "e", "E", "."]);
+  };
+
+  private handleBoatSpeedBonusValueChanges = (e: Event) => {
+    const input = e.target as HTMLInputElement;
+    const value = parseBoundedFloatFromInput(input, { min: 1, max: 5 });
+    if (value === undefined) {
+      this.boatSpeedBonusValue = undefined;
+      input.value = "";
+    } else {
+      this.boatSpeedBonusValue = Math.min(5, Math.max(1, Math.round(value)));
+    }
+  };
+
   private handleGameModeSelection(value: GameMode) {
     this.gameMode = value;
   }
@@ -769,6 +818,9 @@ export class SinglePlayerModal extends BaseModal {
                       this.startingTroopsValue * 1_000_000,
                     ),
                   }
+                : {}),
+              ...(this.boatSpeedBonus && this.boatSpeedBonusValue !== undefined
+                ? { boatSpeedBonus: Math.round(this.boatSpeedBonusValue) }
                 : {}),
               ...(this.disableAlliances ? { disableAlliances: true } : {}),
               ...(this.waterNukes ? { waterNukes: true } : {}),

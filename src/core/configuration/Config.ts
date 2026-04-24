@@ -113,6 +113,7 @@ export interface Config {
   boatAttackAmount(attacker: Player, defender: Player | TerraNullius): number;
   shellLifetime(): number;
   boatMaxNumber(): number;
+  boatSpeedBonus(): number;
   allianceDuration(): Tick;
   allianceRequestDuration(): Tick;
   allianceRequestCooldown(): Tick;

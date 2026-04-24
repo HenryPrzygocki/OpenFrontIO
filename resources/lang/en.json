@@ -217,7 +217,9 @@
     "starting_gold": "Starting Gold (Millions)",
     "starting_gold_placeholder": "5",
     "starting_troops": "Starting Max Troops (Millions)",
-    "starting_troops_placeholder": "100"
+    "starting_troops_placeholder": "100",
+    "boat_speed_bonus": "Boat Speed Bonus",
+    "boat_speed_bonus_placeholder": "2"
   },
   "token_login_modal": {
     "title": "Logging in...",

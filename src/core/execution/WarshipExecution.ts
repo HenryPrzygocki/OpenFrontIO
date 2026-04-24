@@ -77,7 +77,10 @@ export class WarshipExecution implements Execution {
     this.warship.setTargetUnit(this.findTargetUnit());
 
     // Always patrol for movement
-    this.patrol();
+    const patrolSteps = this.mg.config().boatSpeedBonus();
+    for (let i = 0; i < patrolSteps; i++) {
+      this.patrol();
+    }
 
     // Priority 1: Shoot transport ship if in range
     if (this.warship.targetUnit()?.type() === UnitType.TransportShip) {
@@ -225,7 +228,7 @@ export class WarshipExecution implements Execution {
     const config = mg.config();
     const owner = this.warship.owner();
     const hasPort = owner.unitCount(UnitType.Port) > 0;
-    const patrolTile = this.warship.patrolTile()!;
+    const patrolTile = this.warship.patrolTile();
     const patrolRangeSquared = config.warshipPatrolRange() ** 2;
 
     // Lazy: only computed if a TradeShip candidate forces the component check.
@@ -274,6 +277,7 @@ export class WarshipExecution implements Execution {
         }
 
         if (
+          patrolTile !== undefined &&
           mg.euclideanDistSquared(patrolTile, unit.tile()) > patrolRangeSquared
         ) {
           // Prevent warship from chasing trade ship that is too far away from

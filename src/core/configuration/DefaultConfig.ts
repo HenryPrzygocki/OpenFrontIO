@@ -592,6 +592,10 @@ export class DefaultConfig implements Config {
     }
     return 80;
   }
+  boatSpeedBonus(): number {
+    return this._gameConfig.boatSpeedBonus ?? 1;
+  }
+
   boatMaxNumber(): number {
     if (this.isUnitDisabled(UnitType.TransportShip)) {
       return 0;

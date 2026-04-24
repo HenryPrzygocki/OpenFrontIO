@@ -18,6 +18,18 @@ import { AttackExecution } from "./AttackExecution";
 
 const malusForRetreat = 25;
 
+function decimatePath(path: TileRef[], step: number): TileRef[] {
+  const result: TileRef[] = [];
+  for (let i = 0; i < path.length; i += step) {
+    result.push(path[i]);
+  }
+  const last = path[path.length - 1];
+  if (result[result.length - 1] !== last) {
+    result.push(last);
+  }
+  return result;
+}
+
 export class TransportShipExecution implements Execution {
   private active = true;
 
@@ -133,13 +145,14 @@ export class TransportShipExecution implements Execution {
       fullPath.unshift(this.src);
     }
 
+    const speedBonus = mg.config().boatSpeedBonus();
     const motionPlan: MotionPlanRecord = {
       kind: "grid",
       unitId: this.boat.id(),
       planId: this.motionPlanId,
-      startTick: ticks + this.ticksPerMove,
-      ticksPerStep: this.ticksPerMove,
-      path: fullPath,
+      startTick: ticks + 1,
+      ticksPerStep: 1,
+      path: speedBonus > 1 ? decimatePath(fullPath, speedBonus) : fullPath,
     };
     this.mg.recordMotionPlan(motionPlan);
     this.motionPlanDst = this.dst;
@@ -228,67 +241,70 @@ export class TransportShipExecution implements Execution {
       }
     }
 
-    const result = this.pathFinder.next(this.boat.tile(), this.dst);
-    switch (result.status) {
-      case PathStatus.COMPLETE:
-        if (this.mg.owner(this.dst) === this.attacker) {
-          const deaths = this.boat.troops() * (malusForRetreat / 100);
-          const survivors = this.boat.troops() - deaths;
-          this.attacker.addTroops(survivors);
+    const speedBonus = this.mg.config().boatSpeedBonus();
+    for (let step = 0; step < speedBonus; step++) {
+      const result = this.pathFinder.next(this.boat.tile(), this.dst);
+      switch (result.status) {
+        case PathStatus.COMPLETE:
+          if (this.mg.owner(this.dst) === this.attacker) {
+            const deaths = this.boat.troops() * (malusForRetreat / 100);
+            const survivors = this.boat.troops() - deaths;
+            this.attacker.addTroops(survivors);
+            this.boat.delete(false);
+            this.active = false;
+
+            // Record stats
+            this.mg
+              .stats()
+              .boatArriveTroops(this.attacker, this.target, survivors);
+            if (deaths) {
+              this.mg.displayMessage(
+                "events_display.attack_cancelled_retreat",
+                MessageType.ATTACK_CANCELLED,
+                this.attacker.id(),
+                undefined,
+                { troops: renderTroops(deaths) },
+              );
+            }
+            return;
+          }
+          this.attacker.conquer(this.dst);
+          if (this.target.isPlayer() && this.attacker.isFriendly(this.target)) {
+            this.attacker.addTroops(this.boat.troops());
+          } else {
+            this.mg.addExecution(
+              new AttackExecution(
+                this.boat.troops(),
+                this.attacker,
+                this.target.id(),
+                this.dst,
+                false,
+              ),
+            );
+          }
           this.boat.delete(false);
           this.active = false;
 
           // Record stats
           this.mg
             .stats()
-            .boatArriveTroops(this.attacker, this.target, survivors);
-          if (deaths) {
-            this.mg.displayMessage(
-              "events_display.attack_cancelled_retreat",
-              MessageType.ATTACK_CANCELLED,
-              this.attacker.id(),
-              undefined,
-              { troops: renderTroops(deaths) },
-            );
-          }
+            .boatArriveTroops(this.attacker, this.target, this.boat.troops());
+          return;
+        case PathStatus.NEXT:
+          this.boat.move(result.node);
+          break;
+        case PathStatus.NOT_FOUND: {
+          // TODO: add to poisoned port list
+          const map = this.mg.map();
+          const boatTile = this.boat.tile();
+          console.warn(
+            `TransportShip path not found: boat@(${map.x(boatTile)},${map.y(boatTile)}) -> dst@(${map.x(this.dst)},${map.y(this.dst)}), attacker=${this.attacker.id()}, target=${this.target.id()}`,
+          );
+          this.attacker.addTroops(this.boat.troops());
+          this.boat.delete(false);
+          this.active = false;
           return;
         }
-        this.attacker.conquer(this.dst);
-        if (this.target.isPlayer() && this.attacker.isFriendly(this.target)) {
-          this.attacker.addTroops(this.boat.troops());
-        } else {
-          this.mg.addExecution(
-            new AttackExecution(
-              this.boat.troops(),
-              this.attacker,
-              this.target.id(),
-              this.dst,
-              false,
-            ),
-          );
-        }
-        this.boat.delete(false);
-        this.active = false;
-
-        // Record stats
-        this.mg
-          .stats()
-          .boatArriveTroops(this.attacker, this.target, this.boat.troops());
-        return;
-      case PathStatus.NEXT:
-        this.boat.move(result.node);
-        break;
-      case PathStatus.NOT_FOUND: {
-        // TODO: add to poisoned port list
-        const map = this.mg.map();
-        const boatTile = this.boat.tile();
-        console.warn(
-          `TransportShip path not found: boat@(${map.x(boatTile)},${map.y(boatTile)}) -> dst@(${map.x(this.dst)},${map.y(this.dst)}), attacker=${this.attacker.id()}, target=${this.target.id()}`,
-        );
-        this.attacker.addTroops(this.boat.troops());
-        this.boat.delete(false);
-        this.active = false;
-        return;
       }
     }
 
@@ -305,9 +321,9 @@ export class TransportShipExecution implements Execution {
         kind: "grid",
         unitId: this.boat.id(),
         planId: this.motionPlanId,
-        startTick: ticks + this.ticksPerMove,
-        ticksPerStep: this.ticksPerMove,
-        path: fullPath,
+        startTick: ticks + 1,
+        ticksPerStep: 1,
+        path: speedBonus > 1 ? decimatePath(fullPath, speedBonus) : fullPath,
       });
       this.motionPlanDst = this.dst;
     }
