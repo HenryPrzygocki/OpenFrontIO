@@ -435,7 +435,7 @@ export const CancelBoatIntentSchema = z.object({
 
 export const MoveWarshipIntentSchema = z.object({
   type: z.literal("move_warship"),
-  unitId: z.number(),
+  unitIds: z.array(z.number().int()).nonempty(),
   tile: z.number(),
 });
 
