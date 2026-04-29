@@ -362,16 +362,18 @@
     "sanfrancisco": "San Francisco",
     "aegean": "Aegean",
     "milkyway": "Milky Way",
-    "mediterranean": "Mediterranean",
+    "marenostrum": "Mare Nostrum",
     "dyslexdria": "Dyslexdria",
     "greatlakes": "Great Lakes",
     "straitofmalacca": "Strait Of Malacca",
     "luna": "Luna",
     "conakry": "Conakry",
     "caucasus": "Caucasus",
+    "losangeles": "Los Angeles",
     "beringsea": "Bering Sea",
     "antarctica": "Antarctica",
-    "archipelagosea": "Archipelago Sea"
+    "archipelagosea": "Archipelago Sea",
+    "bajacalifornia": "Baja California"
   },
   "map_categories": {
     "featured": "Featured",
